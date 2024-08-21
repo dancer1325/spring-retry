@@ -79,7 +79,6 @@ class Service {
 * `mvn install`
   * to build
 
-
 ## Features and API
 
 * goal
