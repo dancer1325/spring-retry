@@ -1,10 +1,15 @@
 [![Build Status](https://github.com/spring-projects/spring-retry/actions/workflows/build-and-deploy-snapshot.yml/badge.svg?branch=main)](https://github.com/spring-projects/spring-retry/actions/workflows/build-and-deploy-snapshot.yml?query=branch%3Amain) [![Javadocs](https://www.javadoc.io/badge/org.springframework.retry/spring-retry.svg)](https://www.javadoc.io/doc/org.springframework.retry/spring-retry)
 
-This project provides declarative retry support for Spring applications. 
-It is used in Spring Batch, Spring Integration, and others.
-Imperative retry is also supported for explicit usage.
+* goal
+  * declarative retry support -- for -- Spring applications
+* uses
+  * Spring Batch,
+  * Spring Integration,
+  * other Spring projects
+  * explicit usage
 
-The Maven artifact for this library is:
+* How to add?
+  * via Maven
 
 ```xml
 <dependency>
@@ -15,12 +20,11 @@ The Maven artifact for this library is:
 
 ## Quick Start
 
-This section provides a quick introduction to getting started with Spring Retry.
-It includes a declarative example and an imperative example.
-
-### Declarative Example
-
-The following example shows how to use Spring Retry in its declarative style:
+### Declarative
+* `@Retryable` & `@Recover`
+  * 👁️ has -- an additional runtime dependency on -- AOP classes 👁️
+    * Check ['Java Configuration for Retry Proxies'](#javaConfigForRetryProxies)
+* _Example:_
 
 ```java
 @Configuration
@@ -31,10 +35,14 @@ public class Application {
 
 @Service
 class Service {
+    
+    // if invocation to this method, hits "RemoteAccessException" -> retries, by default, 3 times 
     @Retryable(retryFor = RemoteAccessException.class)
     public void service() {
         // ... do something
     }
+    
+    // if after 3 times, same error -> this method is invoked
     @Recover
     public void recover(RemoteAccessException e) {
        // ... panic
@@ -42,49 +50,44 @@ class Service {
 }
 ```
 
-This example calls the `service` method and, if it fails with a `RemoteAccessException`, retries
-(by default, up to three times), and then tries the `recover` method if unsuccessful.
-There are various options in the `@Retryable` annotation attributes for including and
-excluding exception types, limiting the number of retries, and setting the policy for backoff.
+### Imperative 
 
-The declarative approach to applying retry handling by using the `@Retryable` annotation shown earlier has an additional
-runtime dependency on AOP classes. For details on how to resolve this dependency in your project, see the
-['Java Configuration for Retry Proxies'](#javaConfigForRetryProxies) section.
+* -- based on the -- "spring-retry" version 
+  * spring-retry v1.3+
+    * _Example:_ 
 
-### Imperative Example
+        ```java
+        RetryTemplate template = RetryTemplate.builder()
+                        .maxAttempts(3)
+                        .fixedBackoff(1000)
+                        .retryOn(RemoteAccessException.class)
+                        .build();
+        
+        template.execute(ctx -> {
+            // ... do something
+        });
+        ```
 
-The following example shows how to use Spring Retry in its imperative style (available since version 1.3):
-
-```java
-RetryTemplate template = RetryTemplate.builder()
-				.maxAttempts(3)
-				.fixedBackoff(1000)
-				.retryOn(RemoteAccessException.class)
-				.build();
-
-template.execute(ctx -> {
-    // ... do something
-});
-```
-
-For versions prior to 1.3,
-see the examples in the [RetryTemplate](#using-retrytemplate) section.
+  * spring-retry < v1.3
+    * Check [RetryTemplate](#using-retrytemplate)
 
 ## Building
 
-Spring Retry requires Java 17 and Maven 3.0.5 (or greater).
-To build, run the following Maven command:
+* requirements
+  * Java v17+
+  * Maven v3.0.5+
+* `mvn install`
+  * to build
 
-```
-$ mvn install
-```
 
 ## Features and API
 
-This section discusses the features of Spring Retry and shows how to use its API.
+* goal
+  * features of Spring Retry
+  * how to use its API
 
 ### Using `RetryTemplate`
-
+* TODO:
 To make processing more robust and less prone to failure, it sometimes helps to
 automatically retry a failed operation, in case it might succeed on a subsequent attempt.
 Errors that are susceptible to this kind of treatment are transient in nature. For
