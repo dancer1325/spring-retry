@@ -788,11 +788,23 @@ interceptor.
 
 ## Micrometer Support
 
-Starting with version 2.0.8, the `MetricsRetryListener` implementation is provided to be injected into a `RetryTemplate` or referenced via `@Retryable(listeners)` attribute.
-This `MetricsRetryListener` is based on the [Micrometer](https://docs.micrometer.io/micrometer/reference/index.html) `MeterRegistry` and exposes a `spring.retry` timer from `open()` till `close()` listener callbacks.
-Such a timer, essentially, covers the whole retry operation and, in addition to the `name` tag based on `RetryCallback.getLabel()` value, it adds tags like `retry.count` (`0` if no any retries entered - first call is successful) and `exception` (if all the retry attempts have been exhausted, so the last exception is thrown back to the caller).
-The `MetricsRetryListener` can be customized with static tags, or via `Function<RetryContext, Iterable<Tag>>`.
-See `MetricsRetryListener` Javadocs for more information.
+* `MetricsRetryListener`
+  * "spring-retry" v.2.0.8+
+  * ways to be injected
+    * | `RetryTemplate`
+    * `@Retryable(listeners)` == `listeners` argument
+  * -- based on -- [Micrometer](https://docs.micrometer.io/micrometer/reference/index.html) `MeterRegistry`
+  * exposes a `spring.retry` timer / from `open()` -- till -- `close()` listener callbacks
+    * -> covers the WHOLE retry operation
+    * adds tags
+      * `name` / -- based on -- `RetryCallback.getLabel()` value
+      * `retry.count` 
+        * if NO any retries entered (== first call is successful)  -> `0`
+      * `exception`
+        * if ALL the retry attempts have been exhausted -> last exception -- is thrown back to the -- caller
+  * ways to customize it
+    * static tags
+    * `Function<RetryContext, Iterable<Tag>>`
 
 ## Contributing
 
