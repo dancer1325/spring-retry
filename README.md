@@ -348,82 +348,68 @@ complex system, by adding jitter.
 
 ## Listeners
 
-It is often useful to be able to receive additional callbacks for cross-cutting concerns across a number of different retries. 
-For this purpose, Spring Retry provides the `RetryListener` interface. 
-The `RetryTemplate` lets you register `RetryListener` instances, and they are given callbacks with the `RetryContext` and `Throwable` (where available during the iteration).
+* `RetryListener`
+  * goal
+    * receive additional callbacks -- for -- cross-cutting concerns ACROSS a number of DIFFERENT retries 
+  * `open` & `close` callbacks
+    * BEFORE & AFTER the entire retry
+    * `close(..., Throwable)`
+  * `onSuccess`, `onError`
+    * apply | individual `RetryCallback` calls
+    * `onSuccess`
+      * | v2.0+, called AFTER a successful -- call to the -- callback
+        * -> listener can examine the result & throw an exception -- based on -- your business logic
+          * based on type of exception thrown -> call will be or NOT retried
+  * if there are >=1 listener -> there is an order
+    * `open` called | SAME order
+    * `onSuccess`, `onError`, and `close` called | reverse order 
 
-The following listing shows the `RetryListener` interface:
-
-```java
-public interface RetryListener {
-
-	default <T, E extends Throwable> boolean open(RetryContext context, RetryCallback<T, E> callback) {
-		return true;
-	}
-
-	default <T, E extends Throwable> void onSuccess(RetryContext context, RetryCallback<T, E> callback, T result) {
-	}
-
-	default <T, E extends Throwable> void onError(RetryContext context, RetryCallback<T, E> callback,
-			Throwable throwable) {
-	}
-
-	default <T, E extends Throwable> void close(RetryContext context, RetryCallback<T, E> callback,
-			Throwable throwable) {
-	}
-
-}
-```
-
-The `open` and `close` callbacks come before and after the entire retry in the simplest case, and `onSuccess`, `onError` apply to the individual `RetryCallback` calls; the current retry count can be obtained from the `RetryContext`.
-The close method might also receive a `Throwable`.
-Starting with version 2.0, the `onSuccess` method is called after a successful call to the callback.
-This allows the listener to examine the result and throw an exception if the result doesn't match some expected criteria.
-The type of the exception thrown is then used to determine whether the call should be retried or not, based on the retry policy.
-If there has been an error, it is the last one thrown by the `RetryCallback`.
-
-Note that when there is more than one listener, they are in a list, so there is an order.
-In this case, `open` is called in the same order, while `onSuccess`, `onError`, and `close` are called in reverse order.
+* `RetryContext`
+  * allows
+    * obtaining the current retry count 
+ 
+* `RetryTemplate`
+  * allows
+    * registering `RetryListener` instances, and they are given callbacks with the `RetryContext` and `Throwable` (where available during the iteration).
 
 ### Listeners for Reflective Method Invocations
 
-When dealing with methods that are annotated with `@Retryable` or with Spring AOP intercepted methods, Spring Retry allows a detailed inspection of the method invocation within the `RetryListener` implementation.
+* if methods are annotated with `@Retryable` or Spring AOP intercepted methods -> Spring Retry allows a detailed inspection of the method invocation | `RetryListener` implementation
+  * use cases
+    * monitor how often a certain method call has been retried & exposed / detailed tagging information (_Example:_ class name, method name, or parameter values)
+      * _Example:_ 
+        ```java
+        
+        template.registerListener(new MethodInvocationRetryListenerSupport() {
+              @Override
+              protected <T, E extends Throwable> void doClose(RetryContext context,
+                  MethodInvocationRetryCallback<T, E> callback, Throwable throwable) {
+                monitoringTags.put(labelTagName, callback.getLabel());
+                Method method = callback.getInvocation()
+                    .getMethod();
+                monitoringTags.put(classTagName,
+                    method.getDeclaringClass().getSimpleName());
+                monitoringTags.put(methodTagName, method.getName());
+        
+                // register a monitoring counter with appropriate tags
+                // ...
+        
+                @Override
+                protected <T, E extends Throwable> void doOnSuccess(RetryContext context,
+                        MethodInvocationRetryCallback<T, E> callback, T result) {
+        
+                    Object[] arguments = callback.getInvocation().getArguments();
+        
+                    // decide whether the result for the given arguments should be accepted
+                    // or retried according to the retry policy
+                }
+        
+              }
+            });
+        ```
 
-Such a scenario could be particularly useful when there is a need to monitor how often a certain method call has been retried and expose it with detailed tagging information (such as class name, method name, or even parameter values in some exotic cases).
-
-Starting with version 2.0, the `MethodInvocationRetryListenerSupport` has a new method `doOnSuccess`.
-
-The following example registers such a listener:
-
-```java
-
-template.registerListener(new MethodInvocationRetryListenerSupport() {
-      @Override
-      protected <T, E extends Throwable> void doClose(RetryContext context,
-          MethodInvocationRetryCallback<T, E> callback, Throwable throwable) {
-        monitoringTags.put(labelTagName, callback.getLabel());
-        Method method = callback.getInvocation()
-            .getMethod();
-        monitoringTags.put(classTagName,
-            method.getDeclaringClass().getSimpleName());
-        monitoringTags.put(methodTagName, method.getName());
-
-        // register a monitoring counter with appropriate tags
-        // ...
-
-        @Override
-        protected <T, E extends Throwable> void doOnSuccess(RetryContext context,
-                MethodInvocationRetryCallback<T, E> callback, T result) {
-
-            Object[] arguments = callback.getInvocation().getArguments();
-
-            // decide whether the result for the given arguments should be accepted
-            // or retried according to the retry policy
-        }
-
-      }
-    });
-```
+* `MethodInvocationRetryListenerSupport`
+  * | v2.0, NEW method `doOnSuccess`
 
 ## Declarative Retry
 
