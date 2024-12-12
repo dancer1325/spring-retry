@@ -17,4 +17,4 @@
     * uses
       * if it throws a NEW exception & based on retry policy -> can cause ANOTHER retry 
   * `void onError(){}`
-    * 👀called | AFTER ALL UNSUCESSFUL attempt at a retry 👀
+    * 👀called | AFTER ALL UNSUCCESSFUL attempt at a retry 👀
