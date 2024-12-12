@@ -420,57 +420,60 @@ wraps a method call in a `RetryOperations` instance for exactly this purpose. Th
 according to the `RetryPolicy` in the provided `RepeatTemplate`.
 
 
-### <a name="javaConfigForRetryProxies"></a> Java Configuration for Retry Proxies
+### <a name="javaConfigForRetryProxies"></a> Java Configuration -- for -- Retry Proxies
 
-You can add the `@EnableRetry` annotation to one of your `@Configuration` classes and use
-`@Retryable` on the methods (or on the type level for all methods) that you want to retry.
-You can also specify any number of retry listeners. The following example shows how to do
-so:
+* steps
+  * `@EnableRetry` | one of your `@Configuration` classes
+  * use `@Retryable` | methods (or | type level for ALL methods) / you want to retry
 
-```java
-@Configuration
-@EnableRetry
-public class Application {
-
-    @Bean
-    public Service service() {
-        return new Service();
+* _Examples:_
+  * _Example1:_ specify SEVERAL retry listeners
+      ```java
+      @Configuration
+      @EnableRetry
+      public class Application {
+    
+          @Bean
+          public Service service() {
+              return new Service();
+          }
+    
+          @Bean public RetryListener retryListener1() {
+              return new RetryListener() {...}
+          }
+    
+          @Bean public RetryListener retryListener2() {
+              return new RetryListener() {...}
+          }
+    
+      }
+    
+      @Service
+      class Service {
+          @Retryable(RemoteAccessException.class)
+          public service() {
+              // ... do something
+          }
+      }
+      ```
+  * _Example2:_ `@Retryable` attributes -- to control the -- `RetryPolicy` and `BackoffPolicy`
+    ```java
+    @Service
+    class Service {
+        // random backoff / [100ms, 500ms] & < 12 attempts 
+        @Retryable(maxAttempts=12, backoff=@Backoff(delay=100, maxDelay=500))
+        public service() {
+            // ... do something
+        }
     }
+    ```
 
-    @Bean public RetryListener retryListener1() {
-        return new RetryListener() {...}
-    }
+* `@Retryable`
+  * .`stateful`
+    * default: `false`
+    * control whether the retry is stateful or NOT
 
-    @Bean public RetryListener retryListener2() {
-        return new RetryListener() {...}
-    }
-
-}
-
-@Service
-class Service {
-    @Retryable(RemoteAccessException.class)
-    public service() {
-        // ... do something
-    }
-}
-```
-
-You can use the attributes of `@Retryable` to control the `RetryPolicy` and `BackoffPolicy`, as follows:
-
-```java
-@Service
-class Service {
-    @Retryable(maxAttempts=12, backoff=@Backoff(delay=100, maxDelay=500))
-    public service() {
-        // ... do something
-    }
-}
-```
-
-The preceding example creates a random backoff between 100 and 500 milliseconds and up to
-12 attempts. There is also a `stateful` attribute (default: `false`) to control whether
-the retry is stateful or not. To use stateful retry, the intercepted method has to have
+* TODO: To use stateful retry, the intercepted method has to have
 arguments, since they are used to construct the cache key for the state.
 
 The `@EnableRetry` annotation also looks for beans of type `Sleeper` and other strategies
