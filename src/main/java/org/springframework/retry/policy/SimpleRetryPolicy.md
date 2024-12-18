@@ -17,3 +17,8 @@
             .build();
         ``` 
       * _Example2:_ `RetryTemplate.defaultInstance()`
+
+* `SimpleRetryPolicy(boolean traverseCauses){}`
+  * `traverseCauses`
+    * if `true` -> exception causes -- will be traversed UNTIL it's found a match or the root cause
+  
