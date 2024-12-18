@@ -312,30 +312,15 @@ usual concerns about limits and timeouts can be injected there (see the [Additio
 
 ## Backoff Policies
 
-When retrying after a transient failure, it often helps to wait a bit before trying again,
-because (usually) the failure is caused by some problem that can be resolved only by
-waiting. If a `RetryCallback` fails, the `RetryTemplate` can pause execution according to
-the `BackoffPolicy`. The following listing shows the definition of the `BackoffPolicy`
-interface:
+* backoff
+  * == time between retryWithFailure -- & -- nextRetryAttempt
+    * Reason: 🧠 some problems can be resolved only by waiting 🧠
 
-```java
-public interface BackoffPolicy {
-
-    BackOffContext start(RetryContext context);
-
-    void backOff(BackOffContext backOffContext)
-        throws BackOffInterruptedException;
-
-}
-```
-
-A `BackoffPolicy` is free to implement the backoff in any way it chooses. The policies
-provided by Spring Retry all use `Object.wait()`. A common use case is to
-back off with an exponentially increasing wait period, to avoid two retries getting into
-lock step and both failing (a lesson learned from Ethernet). For this purpose, Spring
-Retry provides `ExponentialBackoffPolicy`. Spring Retry also provides randomized versions
-of delay policies that are quite useful to avoid resonating between related failures in a
-complex system, by adding jitter.
+* `BackoffPolicy`
+  * built-in implementations
+    * ALL use `Object.wait()`
+    * `ExponentialBackoffPolicy`
+    * `UniformRandomBackOffPolicy`
 
 ## Listeners
 
