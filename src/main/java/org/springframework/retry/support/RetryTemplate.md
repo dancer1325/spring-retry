@@ -15,7 +15,7 @@
       * ways
         * `setRetryPolicy(RetryPolicy)`
         * `setBackOffPolicy(BackOffPolicy)`
-      * & done on the fly -> in progress retryable operations will be affected
+      * 👀& done on the fly -> in progress retryable operations will NOT be affected 👀
 
 * create a NEW instance
   ```
