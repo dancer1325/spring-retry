@@ -270,60 +270,45 @@ usual concerns about limits and timeouts can be injected there (see the [Additio
 
 ## Retry Policies
 
-Inside a `RetryTemplate`, the decision to retry or fail in the `execute` method is
-determined by a `RetryPolicy`, which is also a factory for the `RetryContext`. The
-`RetryTemplate` is responsible for using the current policy to create a `RetryContext` and
-passing that in to the `RetryCallback` at every attempt. After a callback fails, the
-`RetryTemplate` has to make a call to the `RetryPolicy` to ask it to update its state
-(which is stored in `RetryContext`). It then asks the policy if another attempt can be
-made. If another attempt cannot be made (for example, because a limit has been reached or
-a timeout has been detected), the policy is also responsible for identifying the
-exhausted state -- but not for handling the exception. `RetryTemplate` throws the
-original exception, except in the stateful case, when no recovery is available. In that
-case, it throws `RetryExhaustedException`. You can also set a flag in the
-`RetryTemplate` to have it unconditionally throw the original exception from the
-callback (that is, from user code) instead.
+* `RetryPolicy`
+  * uses
+    * | `RetryTemplate`, determine to retry or fail   
+  * built-in implementations
+    * `SimpleRetryPolicy`
+      * _Example:_
+        ```java
+        // Set the max attempts including the initial attempt before retrying
+        // and retry on all exceptions (this is the default):
+        SimpleRetryPolicy policy = new SimpleRetryPolicy(5, Collections.singletonMap(Exception.class, true));
+        
+        // Use the policy...
+        RetryTemplate template = new RetryTemplate();
+        template.setRetryPolicy(policy);
+        template.execute(new RetryCallback<MyObject, Exception>() {
+            public MyObject doWithRetry(RetryContext context) {
+                // business logic here
+            }
+        });
+        ```
+    * `TimeoutRetryPolicy`
+    * `ExceptionClassifierRetryPolicy`
 
-> *Tip:*
-Failures are inherently either retryable or not -- if the same exception is always going
-to be thrown from the business logic, it does not help to retry it. So you should not
-retry on all exception types. Rather, try to focus on only those exceptions that you
-expect to be retryable. It is not usually harmful to the business logic to retry more
-aggressively, but it is wasteful, because, if a failure is deterministic, time is spent
-retrying something that you know in advance is fatal.
+* `RetryTemplate`
+  * `.execute(currentPolicy)`
+    * 👀creates a `RetryContext` 👀
+    * 👀pass the `RetryContext` | `RetryCallback` / EVERY attempt 👀 
+    * if a callback fails ->
+      * `RetryTemplate` -- has to make a call to the -- `RetryPolicy`
+        * Reason: 🧠 ask it to 🧠
+          * update its state | `RetryContext` &
+          * validate if ANOTHER attempt can be made
+            * if another attempt NOT allowed 
+              * -> the policy identifies the exhausted state (!= handling the exception)
+              * `RetryTemplate`
+                * | ALL cases, throws the original exception
+                * | stateful case, throws `RetryExhaustedException`
 
-Spring Retry provides some simple general-purpose implementations of stateless
-`RetryPolicy` (for example, a `SimpleRetryPolicy`) and the `TimeoutRetryPolicy` used in
-the preceding example.
-
-The `SimpleRetryPolicy` allows a retry on any of a named list of exception types, up to a
-fixed number of times. The following example shows how to use it:
-
-```java
-// Set the max attempts including the initial attempt before retrying
-// and retry on all exceptions (this is the default):
-SimpleRetryPolicy policy = new SimpleRetryPolicy(5, Collections.singletonMap(Exception.class, true));
-
-// Use the policy...
-RetryTemplate template = new RetryTemplate();
-template.setRetryPolicy(policy);
-template.execute(new RetryCallback<MyObject, Exception>() {
-    public MyObject doWithRetry(RetryContext context) {
-        // business logic here
-    }
-});
-```
-
-A more flexible implementation called `ExceptionClassifierRetryPolicy` is also available.
-It lets you configure different retry behavior for an arbitrary set of exception types
-through the `ExceptionClassifier` abstraction. The policy works by calling on the
-classifier to convert an exception into a delegate `RetryPolicy`. For example, one
-exception type can be retried more times before failure than another, by mapping it to a
-different policy.
-
-You might need to implement your own retry policies for more customized decisions. For
-instance, if there is a well-known, solution-specific, classification of exceptions into
-retryable and not retryable.
+* if a failure is deterministic (== always fail | ANY # of retries) -> NOT retry it
 
 ## Backoff Policies
 
@@ -800,27 +785,7 @@ interceptor.
     * static tags
     * `Function<RetryContext, Iterable<Tag>>`
 
-## Contributing
-
-Spring Retry is released under the non-restrictive Apache 2.0 license
-and follows a very standard Github development process, using Github
-tracker for issues and merging pull requests into the main branch. If you want
-to contribute even something trivial, please do not hesitate, but do please
-follow the guidelines in the next paragraph.
-
-Before we can accept a non-trivial patch or pull request, we need you
-to sign the [contributor's agreement](https://cla.pivotal.io/). Signing
-the contributor's agreement does not grant anyone commit rights to the
-main repository, but it does mean that we can accept your
-contributions, and you will get an author credit if we do.  Active
-contributors might be asked to join the core team and be given the
-ability to merge pull requests.
-
 ## Getting Support
-Check out the [Spring Retry tags on Stack Overflow](https://stackoverflow.com/questions/tagged/spring-retry). [Commercial support](https://spring.io/support) is available too.
-
-## Code of Conduct
-
-This project adheres to the [Contributor Covenant](https://github.com/spring-projects/spring-retry/blob/main/CODE_OF_CONDUCT.adoc).
-By participating, you  are expected to uphold this code. Please report unacceptable behavior to
-spring-code-of-conduct@pivotal.io.
+* see
+  * [Spring Retry tags on Stack Overflow](https://stackoverflow.com/questions/tagged/spring-retry)
+  * [Commercial support](https://spring.io/support)
